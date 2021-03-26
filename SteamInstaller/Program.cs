@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SteamInstaller
@@ -18,8 +17,6 @@ namespace SteamInstaller
         private const string FILENAME = "steamcmd.zip";
         private const string FOLDERNAME = "SteamCMD";
         private const string EXE = "steamcmd.exe";
-
-        private static string DataStream = "";
 
         /// <summary>
         /// Constructor of SteamInstaller
@@ -73,8 +70,6 @@ namespace SteamInstaller
                 compiler.BeginOutputReadLine();
 
                 compiler.WaitForExit();
-                //var bytes = Encoding.ASCII.GetBytes(DataStream);
-                //Console.WriteLine(Encoding.UTF8.GetString(bytes));
 
                 WriteColor($"[//] Application {EXE} finished with code {compiler.ExitCode}", ConsoleColor.DarkGreen);
                 WriteColor(@"[//---------------------------------------------------------------]", ConsoleColor.DarkGreen);
@@ -111,10 +106,17 @@ namespace SteamInstaller
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// Write console output to the screen
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">Eventinformation from the console</param>
         private static void Compiler_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            WriteColor($"[//] {e.Data}", ConsoleColor.Cyan);
-            //DataStream += e.Data + Environment.NewLine;
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                WriteColor($"[//] {e.Data}", ConsoleColor.Cyan);
+            }
         }
 
         /// <summary>
