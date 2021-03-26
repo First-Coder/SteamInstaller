@@ -1,15 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using SteamInstaller.Extensions;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace SteamInstaller
 {
@@ -22,9 +18,8 @@ namespace SteamInstaller
         private const string FILENAME = "steamcmd.zip";
         private const string FOLDERNAME = "SteamCMD";
         private const string EXE = "steamcmd.exe";
-        private static string test = "";
 
-        private static ILogger logger;
+        private static string DataStream = "";
 
         /// <summary>
         /// Constructor of SteamInstaller
@@ -47,49 +42,46 @@ namespace SteamInstaller
             WriteColor($"[// Title:] {Assembly.GetEntryAssembly().GetName().Name}", ConsoleColor.DarkGreen);
             WriteColor($"[// Version:] {Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>().Version}", ConsoleColor.DarkGreen);
             WriteColor($"[// Autor:] {Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyCopyrightAttribute>().Copyright}", ConsoleColor.DarkGreen);
-
-
-            var serviceCollection = new ServiceCollection();
-            ConfigureServices(serviceCollection);
-
-            var serviceProvider = serviceCollection.BuildServiceProvider();
-            logger = serviceProvider.GetService<ILogger<Program>>();
-
-            if (DownloadFile())
+            WriteColor(@"[//--Settings-----------------------------------------------------]", ConsoleColor.DarkGreen);
+            WriteColor($"[// Install SteamCMD:] {Directory.GetCurrentDirectory()}", ConsoleColor.DarkGreen);
+            WriteColor(@"[//--Download-----------------------------------------------------]", ConsoleColor.DarkGreen);
+            var download = DownloadFile();
+            if(!download)
             {
-                Directory.Delete(FOLDERNAME, true);
-                
-                logger.LogInformation($"Unzip {FILENAME} to {FOLDERNAME}");
-                ZipFile.ExtractToDirectory(FILENAME, FOLDERNAME);
+                WriteColor(@"[//---------------------------------------------------------------]", ConsoleColor.DarkGreen);
+                Console.ReadKey();
+                return;
+            }
+            WriteColor(@"[//--Install------------------------------------------------------]", ConsoleColor.DarkGreen);
+            WriteColor($"[//] Download folder {FOLDERNAME} is exists...", ConsoleColor.DarkGreen);
+            Directory.Delete(FOLDERNAME, true);
 
-                logger.LogInformation($"Execute {EXE}");
-                using (Process compiler = new Process())
-                {
-                    compiler.StartInfo.FileName = $"{FOLDERNAME}/{EXE}";
-                    compiler.StartInfo.Arguments = "+quit";
-                    compiler.StartInfo.UseShellExecute = false;
-                    compiler.StartInfo.CreateNoWindow = true;
-                    compiler.StartInfo.RedirectStandardOutput = true;
-                    compiler.OutputDataReceived += Compiler_OutputDataReceived;
+            WriteColor($"[//] Unzip {FILENAME} to{FOLDERNAME}...", ConsoleColor.DarkGreen);
+            ZipFile.ExtractToDirectory(FILENAME, FOLDERNAME);
 
-                    compiler.Start();
-                    compiler.BeginOutputReadLine();
+            WriteColor($"[//] Execute {EXE}...", ConsoleColor.DarkGreen);
+            WriteColor(@"[//--SteamCMD Output----------------------------------------------]", ConsoleColor.DarkGreen);
+            using (Process compiler = new Process())
+            {
+                compiler.StartInfo.FileName = $"{FOLDERNAME}/{EXE}";
+                compiler.StartInfo.Arguments = "+quit";
+                compiler.StartInfo.UseShellExecute = false;
+                compiler.StartInfo.RedirectStandardOutput = true;
+                compiler.OutputDataReceived += Compiler_OutputDataReceived;
 
-                    compiler.WaitForExit();
-                    var bytes = Encoding.ASCII.GetBytes(test);
-                    Console.WriteLine(Encoding.UTF8.GetString(bytes));
+                compiler.Start();
+                compiler.BeginOutputReadLine();
 
-                    logger.LogInformation($"{EXE} finished with code {compiler.ExitCode}");
-                    logger.LogInformation($"{FOLDERNAME} is successful installed!");
+                compiler.WaitForExit();
+                //var bytes = Encoding.ASCII.GetBytes(DataStream);
+                //Console.WriteLine(Encoding.UTF8.GetString(bytes));
 
-                    compiler.Close();
-                }
+                WriteColor($"[//] Application {EXE} finished with code {compiler.ExitCode}", ConsoleColor.DarkGreen);
+                WriteColor(@"[//---------------------------------------------------------------]", ConsoleColor.DarkGreen);
+                compiler.Close();
             }
 
-            logger.LogInformation("HELLO GUYS");
             Console.ReadKey();
-            //_ = DownloadExtension.DownloadAsync(STEAM_CMD_URL, "steamcmd.zip");
-            //Console.WriteLine("Hello World!");
         }
 
         /// <summary>
@@ -119,66 +111,31 @@ namespace SteamInstaller
             Console.WriteLine();
         }
 
-        private async static void Test()
-        {
-            
-
-
-
-
-            //var proc = new Process
-            //{
-            //    StartInfo = new ProcessStartInfo
-            //    {
-            //        FileName = $"{FOLDERNAME}/{EXE}",
-            //        UseShellExecute = false,
-            //        RedirectStandardOutput = true,
-            //        RedirectStandardInput = true,
-
-            //        CreateNoWindow = true
-            //    }
-            //};
-
-            //proc.Start();
-
-            //while (!proc.StandardOutput.EndOfStream)
-            //{
-            //    await Task.Delay(5000);
-            //    //proc.Dispose();
-            //}
-            //proc.Dispose();
-            ////proc.WaitForExit();
-            //logger.LogInformation($"{EXE} finished with code {proc.ExitCode}");
-            //logger.LogInformation($"{FOLDERNAME} is successful installed!");
-            //proc.Close();
-        }
-
         private static void Compiler_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            //Console.WriteLine(e.Data);
-            test += e.Data + Environment.NewLine;
+            WriteColor($"[//] {e.Data}", ConsoleColor.Cyan);
+            //DataStream += e.Data + Environment.NewLine;
         }
 
-        private static void ConfigureServices(IServiceCollection services)
-        {
-            services.AddLogging(configure => configure.AddConsole());
-        }
-
+        /// <summary>
+        /// Download the SteamCMD file
+        /// </summary>
+        /// <returns>Return true if the file is successful downloaded</returns>
         private static bool DownloadFile()
         {
-            logger.LogInformation($"Start download steamcmd from {STEAM_CMD_URL}");
+            WriteColor($"[//] Start download steamcmd from {STEAM_CMD_URL}...", ConsoleColor.DarkGreen);
             try
             {
                 var client = new WebClient();
                 client.DownloadFile(STEAM_CMD_URL, FILENAME);
-                logger.LogInformation("Download complete!");
+                WriteColor($"[//] Download complete!", ConsoleColor.DarkGreen);
                 return true;
             }
             catch (WebException e)
             {
                 var response = (HttpWebResponse)e.Response;
-                logger.LogError($"Download failed! Webexception ended with status: {response.StatusCode}");
-                logger.LogError(e.Message);
+                WriteColor($"[// Error:] Download failed! Webexception ended with status: {response.StatusCode}", ConsoleColor.DarkRed);
+                WriteColor($"[// Error:] {e.Message}", ConsoleColor.DarkRed);
                 return false;
             }
         }
