@@ -25,7 +25,7 @@ namespace SteamInstaller
         static void Main(string[] args)
         {
             bool quit = false;
-            if (args.Length > 0 && args[1].Equals("/quit"))
+            if (args.Length > 0 && args[0].Equals("/quit"))
             {
                 quit = true;
             }
@@ -56,8 +56,14 @@ namespace SteamInstaller
                 return;
             }
             WriteColor(@"[//--Install------------------------------------------------------]", ConsoleColor.DarkGreen);
-            WriteColor($"[//] Download folder {FOLDERNAME} is exists...", ConsoleColor.DarkGreen);
-            Directory.Delete(FOLDERNAME, true);
+            if (Directory.Exists(FOLDERNAME))
+            {
+                WriteColor($"[//] Download folder {FOLDERNAME} is exists...", ConsoleColor.DarkGreen);
+                Directory.Delete(FOLDERNAME, true);
+            }
+
+            WriteColor($"[//] Create folder {FOLDERNAME}...", ConsoleColor.DarkGreen);
+            Directory.CreateDirectory(FOLDERNAME);
 
             WriteColor($"[//] Unzip {FILENAME} to{FOLDERNAME}...", ConsoleColor.DarkGreen);
             ZipFile.ExtractToDirectory(FILENAME, FOLDERNAME);
