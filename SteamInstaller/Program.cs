@@ -24,6 +24,12 @@ namespace SteamInstaller
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            bool quit = false;
+            if (args.Length > 0 && args[1].Equals("/quit"))
+            {
+                quit = true;
+            }
+
             Console.WriteLine(Environment.NewLine);
             WriteColor(@"[$$$$$$$$\ $$\                       $$\            $$$$$$\                  $$\]", ConsoleColor.DarkGreen);
             WriteColor(@"[$$  _____|\__|                      $$ |          $$  __$$\                 $$ |]", ConsoleColor.DarkGreen);
@@ -76,7 +82,12 @@ namespace SteamInstaller
                 compiler.Close();
             }
 
-            Console.ReadKey();
+            if (!quit)
+            {
+                Console.WriteLine(Environment.NewLine);
+                Console.WriteLine("Push any key to close the console");
+                Console.ReadKey();
+            }
         }
 
         /// <summary>
