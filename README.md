@@ -1,8 +1,8 @@
-[![First-Coder](https://first-coder.de/images/logos/LogoFirstCoderDarkHorizontal.png)](https://first-coder.de/)
+<p align="center">
+  <img src="https://github.com/First-Coder/SteamInstaller/assets/13957661/a25866d9-e242-4e3f-aa27-6a9451d1a32e">
+</p>
 
 ---
-
-# Steam Installer
 
 ## Description
 
